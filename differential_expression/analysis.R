@@ -16,6 +16,7 @@ setwd("~/scratch/")
 kallisto_dir = "/Volumes/sand/vigur/data/kallisto_shared_folders"
 metadata_file = '/Volumes/sand/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
 results_dir = '/Volumes/sand/vigur/results/deseq2/'
+
 ###
 ### 1. read data
 ###
@@ -24,7 +25,6 @@ results_dir = '/Volumes/sand/vigur/results/deseq2/'
 txdb = EnsDb.Hsapiens.v86
 k = keys(txdb, keytype = "TXNAME")
 tx2gene = select(txdb, k, "GENEID", "TXNAME")
-tx2gene
 
 # 1.2. read metadata
 metadata = read.table(metadata_file, header = TRUE)
@@ -66,7 +66,7 @@ hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration
 hypos = list.append(hypos, hypo)
 
 # concentration five
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_five', 'testing'=c(c(37:38), c(47:49)))
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_five', 'testing'=c(c(36:38), c(47:49)))
 hypos = list.append(hypos, hypo)
 
 # concentration fifty
