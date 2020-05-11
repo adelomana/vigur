@@ -1,6 +1,15 @@
 #if (!requireNamespace("BiocManager", quietly = TRUE))
 #  install.packages("BiocManager")
-#BiocManager::install("attempt")
+
+#BiocManager::install("DESeq2")
+#BiocManager::install("tximport")
+#BiocManager::install("EnsDb.Hsapiens.v86")
+#BiocManager::install("BiocParallel")
+#BiocManager::install("rlist")
+#BiocManager::install("stringr")
+#BiocManager::install("org.Hs.eg.db")
+#BiocManager::install("tictoc")
+#BiocManager::install("rhdf5")
 
 library(DESeq2)                
 library(tximport)         
@@ -9,22 +18,25 @@ library(BiocParallel)
 library(rlist)
 library(stringr)
 library(org.Hs.eg.db)
+library(tictoc)
+library(rhdf5)
+
+tic()
 
 # 0. user defined variables
 register(MulticoreParam(8))
 setwd("~/scratch/")
-kallisto_dir = "/Volumes/sand/vigur/data/kallisto_shared_folders"
-metadata_file = '/Volumes/sand/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
-results_dir = '/Volumes/sand/vigur/results/deseq2/'
+kallisto_dir = "/Users/alomana/projects/vigur/data/kallisto_shared_folders"
+metadata_file = '/Users/alomana/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
+results_dir = '/Users/alomana/projects/vigur/results/deseq2/'
 
 ###
 ### 1. read data
 ###
 
 # 1.1. build annotation reference
-edb = EnsDb.Hsapiens.v86
-k = keys(edb, keytype = "TXNAME")
-tx2gene = select(edb, k, "GENEID", "TXNAME")
+k = keys(EnsDb.Hsapiens.v86, keytype = "TXNAME")
+tx2gene = select(EnsDb.Hsapiens.v86, k, "GENEID", "TXNAME")
 
 # 1.2. read metadata
 metadata = read.table(metadata_file, header = TRUE)
@@ -32,9 +44,19 @@ rownames(metadata) = metadata$condition
 metadata
 
 # 2. store abundance for all samples
-#tpm <- txi$abundance
-#store = paste(results_dir, 'DESeq2_TPM_values.tsv', '.tsv', sep='')
-#write.csv(tpm, file=store, quote=FALSE, sep='\t')
+files = file.path(kallisto_dir, metadata$sample, "abundance.h5")
+txi = tximport(files, type="kallisto", tx2gene=tx2gene, ignoreAfterBar=TRUE, ignoreTxVersion=TRUE)
+tpm = txi$abundance
+colnames(tpm) = metadata$sample
+
+a=tpm
+pepe = rownames(a)
+rownames(a) = NULL
+ponele=cbind(pepe,a)
+write.table(ponele, file=store, quote=FALSE, sep='\t')
+
+store = paste(results_dir, 'DESeq2_TPM_values.tsv', sep='')
+write.table(tpm, file=store, quote=FALSE, sep='\t')
 
 # 3. arrange metadata for hypothesis testing
 hypos = list()
@@ -140,7 +162,7 @@ compare = function(hypo) {
   df = as.data.frame(filt2)
   df['common'] = rownames(df)
   selected = rownames(df)
-  info = select(edb, selected, c("GENEBIOTYPE", "GENENAME"), "GENEID")
+  info = select(EnsDb.Hsapiens.v86, selected, c("GENEBIOTYPE", "GENENAME"), "GENEID")
   info['common'] = info$GENEID
   
   descriptions = tryCatch({
@@ -176,3 +198,5 @@ compare = function(hypo) {
 for (hypo in hypos) {
   tempo = compare(hypo)
 }
+
+toc()
