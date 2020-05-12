@@ -46,17 +46,11 @@ metadata
 # 2. store abundance for all samples
 files = file.path(kallisto_dir, metadata$sample, "abundance.h5")
 txi = tximport(files, type="kallisto", tx2gene=tx2gene, ignoreAfterBar=TRUE, ignoreTxVersion=TRUE)
+
 tpm = txi$abundance
 colnames(tpm) = metadata$sample
-
-a=tpm
-pepe = rownames(a)
-rownames(a) = NULL
-ponele=cbind(pepe,a)
-write.table(ponele, file=store, quote=FALSE, sep='\t')
-
 store = paste(results_dir, 'DESeq2_TPM_values.tsv', sep='')
-write.table(tpm, file=store, quote=FALSE, sep='\t')
+write.table(tpm, file=store, quote=FALSE, sep='\t', col.names=NA)
 
 # 3. arrange metadata for hypothesis testing
 hypos = list()
@@ -171,7 +165,7 @@ compare = function(hypo) {
     print('Warning: no description found for ENSEMBL IDs')
     descriptions = data.frame('ENSEMBL'=selected, 'GENENAME'=rep('Not found',each=length(selected)))
   })
-  print(descriptions)
+  #print(descriptions)
   
   names(descriptions)[names(descriptions) == "GENENAME"] <- "DESCRIPTION" # arrow is needed here!
   descriptions['common'] = descriptions$ENSEMBL
