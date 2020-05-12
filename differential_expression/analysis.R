@@ -105,7 +105,9 @@ hypos = list.append(hypos, hypo)
 
 # concentration fifty
 hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_fifty_time_four_vs_zero', 'testing'=c(39:40))
+hypos = list.append(hypos, hypo)
 hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_fifty_time_twentyfour_vs_zero', 'testing'=c(50:52))
+hypos = list.append(hypos, hypo)
 
 # 4. define analysis function
 compare = function(hypo) {

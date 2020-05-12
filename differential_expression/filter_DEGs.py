@@ -8,37 +8,33 @@ import sys, numpy
 ### FUNC
 ###
 
-def read_DEGs(DEGs, experiment, concentration):
+def read_DEGs(DEGs, experiment, concentration, time, trend):
 
     '''
     Returns a dictionary of DEGs.
     '''
 
-    for time in time_tags:
-        DEGs[experiment][concentration][time] = {}
-        working_file = DESeq2_folder + experiment + '_' + concentration + '_time_' + time + '_vs_zero.csv'
-        with open(working_file, 'r') as f:
-            next(f)
-            for line in f:
-                v = line.split(',')
-                gene_name = v[0].replace('"', '')
-                log2FC = float(v[2])
-                if v[-2] == 'NA':
-                    pvalue = 1
-                else:
-                    pvalue = float(v[-2])
-                if v[-1] == 'NA\n':
-                    adjusted = 1
-                else:
-                    adjusted = float(v[-1])
+    working_file = DESeq2_folder + experiment + '_' + concentration + '_' + time + '_vs_zero' + '_' + trend + '.tsv'
+    
+    with open(working_file, 'r') as f:
+        next(f)
+        for line in f:
+            v = line.split('\t')
+            
+            ensembl = v[0]
+            gene_name = v[1]
+            biotype = v[2]
+            description = v[3]
+            basemean = float(v[4])
+            logFC = float(v[5])
+            pvalue = float(v[6])
+            adjusted = float(v[7])
 
-                if (pvalue <= 0.05) and (adjusted <= 0.1):
-                    DEGs[experiment][concentration][time][gene_name] = (log2FC, pvalue, adjusted)
+            info = (ensembl, gene_name, biotype, description, basemean, logFC, pvalue, adjusted)
+
+            DEGs[experiment][concentration][time][trend].append(info)
                     
-        # printing
-        a = len(list(DEGs[experiment][concentration][time].keys()))
-        print('{} {} {} DEGs: {}'.format(experiment, concentration, time, a))
-    print()
+    print('{} {} {} {} \t DEGs: {}'.format(experiment, concentration, time, trend, len(DEGs[experiment][concentration][time][trend])))
 
     return DEGs
 
@@ -47,29 +43,38 @@ def read_DEGs(DEGs, experiment, concentration):
 ###
 
 # 0. use-defined variables
-DESeq2_folder = '/Volumes/sand/vigur/results/deseq2/'
+DESeq2_folder = '/Users/alomana/projects/vigur/results/deseq2/'
 experiment_tags = ['experiment_two', 'experiment_three']
 concentration_tags = ['concentration_zero', 'concentration_half', 'concentration_five', 'concentration_fifty']
-time_tags = ['four', 'twentyfour']
-expression_file = '/Volumes/sand/vigur/results/expression/experiment_both_expression.txt'
+time_tags = ['time_four', 'time_twentyfour']
+trend_tags = ['up', 'down']
+expression_file = DESeq2_folder + 'DESeq2_TPM_values.tsv'
 
 # 1.1. define the DEGs across experimental design
 print('define DEGs')
 DEGs = {}
+
 for experiment in experiment_tags:
     DEGs[experiment] = {}
     for concentration in concentration_tags:
         DEGs[experiment][concentration] = {}
-        DEGs = read_DEGs(DEGs, experiment, concentration)
+        for time in time_tags:
+            DEGs[experiment][concentration][time] = {}
+            for trend in trend_tags:
+                DEGs[experiment][concentration][time][trend] = []
 
+                DEGs = read_DEGs(DEGs, experiment, concentration, time, trend)
+                
 # 1.2. define expression
 print('define expression')
 
 with open(expression_file, 'r') as f:
     first_line = f.readline()
     metadata = first_line.split('\t')[1:]
+    print(metadata)
+    print(len(metadata))
 
-print(len(metadata))
+sys.exit()
 
 expression = {}
 with open(expression_file, 'r') as f:
