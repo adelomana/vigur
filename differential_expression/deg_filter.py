@@ -1,5 +1,5 @@
 ###
-### This script filters DEGs following the rules: (1) absolute log2 fold-change greater than one compared to initial conditions; (2) expression greater than five TPM; (3) relative standard error of the mean across replicates lower than one third; and (4) P < 0.05 and P-adjusted < 0.1 as called by DESeq2 [1] version 1.26.0.
+### This script filters DEGs following the rules: (1) absolute log2 fold-change greater than one compared to initial conditions; (2) expression greater than 3 TPM; (3) relative standard error of the mean across replicates lower than one third; and (4) P < 0.05 and P-adjusted < 0.1 as called by DESeq2 [1] version 1.26.0.
 ###
 
 import sys, numpy
@@ -171,7 +171,7 @@ for experiment in DEGs:
                     fc = num/den
                     abs_log2FC = numpy.abs(numpy.log2(fc))
 
-                    # filter 3: noisy genes, rsem > 1/3
+                    # filter 3: identify noisy genes
                     ref_int = numpy.around(ref) + 1
                     sam_int = numpy.around(sam) + 1
                     sem_ref = numpy.std(ref_int) / numpy.sqrt(len(ref_int))
