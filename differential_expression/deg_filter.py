@@ -76,6 +76,8 @@ time_tags = ['time_four', 'time_twentyfour']
 trend_tags = ['up', 'down']
 
 expression_threshold = 3
+discrete_fc_threshold = 1
+noise_threshold = 1/3
 
 #
 # 1. read data
@@ -125,8 +127,8 @@ with open(expression_file, 'r') as f:
 # 2. analysis
 #
 
-# 2.1. find low-expression cases---filter out below 3 TPMs
-print('find low-expression cases')
+# 2.1. filter
+print('filter DEGs')
 
 for experiment in DEGs:
     for concentration in DEGs[experiment]:
@@ -141,23 +143,63 @@ for experiment in DEGs:
                     if metadata[sample][0:3] == (experiment, 'concentration_zero', 'time_zero'):
                         reference_labels.append(sample)
 
-                # find low-expression cases
+                # filters
                 container = []
                 before = len(DEGs[experiment][concentration][time][trend])
                 for case in DEGs[experiment][concentration][time][trend]:
-                    ensembl = case[0]                    
+                    including = True
+                    ensembl = case[0]
+
+                    # gather TPM expression
                     ref = [expression[label][ensembl] for label in reference_labels]
                     sam = [expression[label][ensembl] for label in sample_labels]
+
+                    # filter 1: identify low-expressed genes
                     r = numpy.median(ref); s = numpy.median(sam)
                     top = numpy.max([r, s])
+
+                    # filter 2: identify fold-changes using discrete values
+                    ###
+                    ###            [round(x, epsilon)/epsilon ] + 1 
+                    ###  FC = abs  -------------------------------- > 1
+                    ###            [round(y, epsilon)/epsilon ] + 1
+                    ###
+                    ###
+                    ###  epsilon = 1
+                    num = numpy.around(s) + 1
+                    den = numpy.around(r) + 1
+                    fc = num/den
+                    abs_log2FC = numpy.abs(numpy.log2(fc))
+
+                    # filter 3: noisy genes, rsem > 1/3
+                    ref_int = numpy.around(ref) + 1
+                    sam_int = numpy.around(sam) + 1
+                    sem_ref = numpy.std(ref_int) / numpy.sqrt(len(ref_int))
+                    rsem_ref = sem_ref / numpy.mean(ref_int)
+                    sem_sam = numpy.std(sam_int) / numpy.sqrt(len(sam_int))
+                    rsem_sam = sem_sam / numpy.mean(sam_int)
+                    noise = numpy.max([rsem_ref, rsem_sam])
                     
-                    if top >= expression_threshold:
+                    # selection
+                    if abs_log2FC < discrete_fc_threshold:
+                        including = False
+                        info = 'WARNING: small change gene discarded.\nExpression changes from {:.3f} ({}) to {:.3f} ({}), resulting in abs_log2FC {:.3f}.\n{}, {}\n'.format(r, den, s, num, abs_log2FC, case[1], case[3])
+                        print(info)
+                        
+                    if (including == True) and (top < expression_threshold):
+                        including = False
+                        info = 'WARNING: low-expression gene discarded.\nExpression changes from {:.3f} to {:.3f}.\n{}, {}\n'.format(r, s, case[1], case[3])
+                        print(info)
+                        
+                    if (including == True) and (noise > noise_threshold):
+                        including = False
+                        info = 'WARNING: noisy gene.\nRef: {}, RSEM {:.3f}\nSam: {}, RSEM {:.3f} \n{}, {}\n'.format(ref, rsem_ref, sam, rsem_sam, case[1], case[3])
+                        print(info)
+                        
+                    if including == True:
                         content = list(case)
-                        content.append(r); content.append(s)
+                        content.append(r); content.append(s); content.append(abs_log2FC)
                         container.append(content)
-                    else:
-                        info = 'WARNING: low-expression gene discarded.\nExpression changes from {:.3f} to {}.\n{}, {}\n'.format(r, s, case[1], case[3])
-                        print(info)                    
 
                 # info about low-expression cases
                 after = len(container)
@@ -171,8 +213,3 @@ for experiment in DEGs:
                         info = '\t'.join([str(element) for element in content])
                         line = '{}\n'.format(info)
                         f.write(line)
-sys.exit()
-
-# 2.3. consider filtering FC with an epsilon
-
-# 2.5. filter out noisy genes: relative standard error of the mean across replicates lower than one third
