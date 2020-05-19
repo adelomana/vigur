@@ -3,6 +3,8 @@
 ###
 
 import sys, numpy
+import matplotlib, matplotlib.pyplot
+import matplotlib_venn
 
 ###
 ### FUNCS
@@ -27,7 +29,7 @@ def metadata_reader():
     
     return metadata
 
-def read_DEGs(DEGs, experiment, concentration, time, trend):
+def read_DEGs(DEGs, experiment, concentration, time, trend): 
 
     '''
     Returns a dictionary of DEGs.
@@ -69,15 +71,16 @@ DESeq2_folder = '/Users/alomana/projects/vigur/results/deseq2/unfiltered/'
 metadata_file = '/Users/alomana/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
 expression_file = DESeq2_folder + 'DESeq2_TPM_values.tsv'
 filtered_folder = '/Users/alomana/projects/vigur/results/deseq2/filtered/'
+venn_folder = '/Users/alomana/projects/vigur/results/deseq2/venn/'
 
 experiment_tags = ['experiment_two', 'experiment_three']
 concentration_tags = ['concentration_zero', 'concentration_half', 'concentration_five', 'concentration_fifty']
 time_tags = ['time_four', 'time_twentyfour']
 trend_tags = ['up', 'down']
 
-expression_threshold = 3
+expression_threshold = 2
 discrete_fc_threshold = 1
-noise_threshold = 1/3
+noise_threshold = 1/2
 
 #
 # 1. read data
@@ -95,7 +98,6 @@ for experiment in experiment_tags:
             DEGs[experiment][concentration][time] = {}
             for trend in trend_tags:
                 DEGs[experiment][concentration][time][trend] = []
-
                 DEGs = read_DEGs(DEGs, experiment, concentration, time, trend)
 
 # 1.2. define metadata
@@ -124,12 +126,14 @@ with open(expression_file, 'r') as f:
             expression[sampleID][gene_name] = value
 
 #
-# 2. analysis
+# 2. filter genes
 #
+print('filter options:')
+print('\t expression threshold: {}'.format(expression_threshold))
+print('\t discrete FC threshold: {}'.format(discrete_fc_threshold))
+print('\t noise threshold: {}'.format(noise_threshold))
 
-# 2.1. filter
 print('filter DEGs')
-
 for experiment in DEGs:
     for concentration in DEGs[experiment]:
         for time in DEGs[experiment][concentration]:
@@ -183,17 +187,17 @@ for experiment in DEGs:
                     # selection
                     if abs_log2FC < discrete_fc_threshold:
                         including = False
-                        info = 'WARNING: small change gene discarded.\nExpression changes from {:.3f} ({}) to {:.3f} ({}), resulting in abs_log2FC {:.3f}.\n{}, {}\n'.format(r, den, s, num, abs_log2FC, case[1], case[3])
+                        info = '\t WARNING: small change gene discarded. Expression changes from {:.3f} ({}) to {:.3f} ({}), resulting in abs_log2FC {:.3f}. {}, {}'.format(r, den, s, num, abs_log2FC, case[1], case[3])
                         print(info)
                         
                     if (including == True) and (top < expression_threshold):
                         including = False
-                        info = 'WARNING: low-expression gene discarded.\nExpression changes from {:.3f} to {:.3f}.\n{}, {}\n'.format(r, s, case[1], case[3])
+                        info = '\t WARNING: low-expression gene discarded. Expression changes from {:.3f} to {:.3f}. {}, {}'.format(r, s, case[1], case[3])
                         print(info)
                         
                     if (including == True) and (noise > noise_threshold):
                         including = False
-                        info = 'WARNING: noisy gene.\nRef: {}, RSEM {:.3f}\nSam: {}, RSEM {:.3f} \n{}, {}\n'.format(ref, rsem_ref, sam, rsem_sam, case[1], case[3])
+                        info = '\t WARNING: noisy gene. Ref: {}, RSEM {:.3f}; Sam: {}, RSEM {:.3f}. {}, {}'.format(ref, rsem_ref, sam, rsem_sam, case[1], case[3])
                         print(info)
                         
                     if including == True:
@@ -203,13 +207,70 @@ for experiment in DEGs:
 
                 # info about low-expression cases
                 after = len(container)
-                print('{} {} {} {} | DEGs reduction from {} to {}'.format(experiment, concentration, time, trend, before, after))
+                print('{} {} {} {} | DEGs final reduction from {} to {}\n'.format(experiment, concentration, time, trend, before, after))
+
+                # store reduced version
+                DEGs[experiment][concentration][time][trend] = container
+
+#
+# 3. write results
+#
+        
+# 3.1. identify consistent results
+for concentration in concentration_tags:
+    for time in time_tags:
+        for trend in trend_tags:
+            for experiment in experiment_tags:
+                current = experiment
+                other = [element for element in experiment_tags if element != current][0]
+
+                # add consistency
+                current_cases = list(set([element[0] for element in DEGs[current][concentration][time][trend]]))
+                other_cases = list(set([element[0] for element in DEGs[other][concentration][time][trend]]))
                 
-                # write results
+                for i in range(len(DEGs[current][concentration][time][trend])):
+                    case = DEGs[current][concentration][time][trend][i]
+                    if case[0] in other_cases:
+                        DEGs[current][concentration][time][trend][i].append('yes')
+                    else:
+                        DEGs[current][concentration][time][trend][i].append('no')
+                        
+                # make Venn diagram
+                if current == 'experiment_two':
+                    print('make Venn diagram')
+                    frame = numpy.sqrt(len(current_cases) + len(other_cases))/5
+                    if trend == 'up':
+                        the_colors = ('orange', 'red')
+                    else:
+                        the_colors = ('green', 'blue')
+                    matplotlib.pyplot.figure(figsize=(frame, frame))
+                    matplotlib_venn.venn2([set(current_cases), set(other_cases)], set_labels = ('Experiment 2', 'Experiment 3'), set_colors=the_colors)
+                    title_tag = '{}_{}_trend_{}'.format(concentration, time, trend)
+                    matplotlib.pyplot.title(title_tag)
+                    figure_file = '{}.svg'.format(venn_folder+title_tag)
+                    matplotlib.pyplot.savefig(figure_file)
+                    matplotlib.pyplot.clf()
+
+# 3.2. store
+for experiment in experiment_tags:
+    for concentration in concentration_tags:
+        for time in time_tags:
+            for trend in trend_tags:
+                
                 storage = filtered_folder + '{}_{}_{}_{}_filtered.tsv'.format(experiment, concentration, time, trend)
                 with open(storage, 'w') as f:
-                    f.write('#ENSEMBL\tGene name\tBiotype\tDescription\tBase mean\tlog2FC\tP value\tAdjusted P-value\tReference expression (TPM)\tSample expression (TPM)\n')
-                    for content in container:
-                        info = '\t'.join([str(element) for element in content])
-                        line = '{}\n'.format(info)
+                    f.write('{}_{}_{}_{}\n'.format(experiment, concentration, time, trend))
+                    f.write('ENSEMBL\tGene name\tBiotype\tDescription\tBase mean\tlog2FC\tP value\tAdjusted P-value\tReference expression (TPM)\tSample expression (TPM)\tDiscrete abs(log2FC)\tConsistency across experiments in this particular comparison\n')
+                    for content in DEGs[current][concentration][time][trend]:
+                        line = ''
+                        for element in content:
+                            if isinstance(element, str) == False:
+                                if numpy.abs(element) < 0.05 and element != 0.:
+                                    sub = '{:.4E}'.format(element)
+                                else:
+                                    sub = '{:.4f}'.format(element)
+                            else:
+                                sub = element
+                            line=line+sub+'\t'
+                        line=line+'\n'
                         f.write(line)

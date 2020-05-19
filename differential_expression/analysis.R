@@ -152,7 +152,7 @@ compare = function(hypo) {
   filt1 = res[which(res$pvalue < 0.05), ]
   filt2 = filt1[which(filt1$padj < 0.1), ]
   print(paste('DEGs found', dim(filt2)[1], sep=' '))
-  write.table(filt2, file='testing.tsv', quote=FALSE, sep='\t')
+  #write.table(filt2, file='testing.tsv', quote=FALSE, sep='\t')
   
   print('annotate')
   df = as.data.frame(filt2)
