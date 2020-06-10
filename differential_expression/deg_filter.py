@@ -255,6 +255,7 @@ for concentration in concentration_tags:
 
 # 3.2. flag DEGs of zero concentration
 for experiment in experiment_tags:
+    union = []
     for time in time_tags:
         for trend in trend_tags:
             for concentration in concentration_tags:
@@ -277,15 +278,15 @@ for experiment in experiment_tags:
 
 # 3.2. store
 for experiment in experiment_tags:
+    union = []
     for concentration in concentration_tags:
         for time in time_tags:
             for trend in trend_tags:
-                
                 storage = filtered_folder + '{}_{}_{}_{}_filtered.tsv'.format(experiment, concentration, time, trend)
                 with open(storage, 'w') as f:
                     f.write('{}_{}_{}_{}\n'.format(experiment, concentration, time, trend))
                     f.write('ENSEMBL\tGene name\tBiotype\tDescription\tBase mean\tlog2FC\tP value\tAdjusted P-value\tReference expression (TPM)\tSample expression (TPM)\tDiscrete abs(log2FC)\tConsistency across experiments in this particular comparison\tTime marker\n')
-                    for content in DEGs[current][concentration][time][trend]:
+                    for content in DEGs[experiment][concentration][time][trend]:
                         line = ''
                         for element in content:
                             if isinstance(element, str) == False:
@@ -298,3 +299,15 @@ for experiment in experiment_tags:
                             line=line+sub+'\t'
                         line=line+'\n'
                         f.write(line)
+                        
+                        if content[0] not in union:
+                            union.append(content[0])
+                            
+    # store union of DEGs
+    union_storage = filtered_folder + 'union_{}.tsv'.format(experiment)
+    print('DEG union for experiment {}: {}'.format(experiment, len(union)))
+    with open(union_storage, 'w') as g:
+        for element in union:
+            g.write('{}\n'.format(element))
+            
+        

@@ -23,8 +23,9 @@ library(ggplot2)
 # 0. user defined variables
 register(MulticoreParam(8))
 setwd("~/scratch/")
-kallisto_dir = "/Volumes/sand/vigur/data/kallisto_shared_folders"
-metadata_file = '/Volumes/sand/vigur/data/metadata/vigur_metadata_experiment3.tsv'
+kallisto_dir = "/Volumes/sandbox/projects/vigur/data/kallisto_shared_folders"
+metadata_file = '/Volumes/sandbox/projects/vigur/data/metadata/vigur_metadata_experiment3.tsv'
+DEG_file = '/Volumes/sandbox/projects/vigur/results/deseq2_filtered/union_experiment_three.tsv'
 
 ###
 ### 1. read data
@@ -56,6 +57,7 @@ dds$treatment <- relevel(dds$treatment, ref = "zero")
 
 # 1.5. filtering
 threshold = 100   ### dim: 61,881 --> 20,438
+threshold = 10    ### dim: 61,881 --> 32,859
 keep = (rowSums(counts(dds))/dim(dds)[2]) >= threshold  
 dds = dds[keep,]
 dds
@@ -84,3 +86,27 @@ ggplot(pcaData, aes(PC1, PC2, color=treatment, shape=time)) +
   theme_bw()
 
 ggsave('figure_experiment_3.pdf', width=8, height=5, scale=0.8)
+
+# 3.3. PCA of DEGs only
+DEGs = read.table(DEG_file)[, 1]
+all_genes = rownames(vsd)
+common_elements = intersect(all_genes, DEGs)
+length(DEGs)
+length(all_genes)
+length(common_elements)
+subset_DEGs_vsd = vsd[common_elements, ]
+
+pcaData = plotPCA(subset_DEGs_vsd, intgroup=c("treatment", "time"), returnData=TRUE)
+percentVar = round(100 * attr(pcaData, "percentVar"))
+ggplot(pcaData, aes(PC1, PC2, color=treatment, shape=time)) + 
+  scale_color_manual(breaks=c("zero", "half", 'five', 'fifty'), values = c("black", "#59a14f", "#edc948", "#e15759")) + 
+  scale_shape_manual(breaks=c("zero", "four", 'twentyfour'), values=c(8, 15, 17)) + 
+  geom_point(size=5, alpha=2/3) + 
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+  theme_bw()
+
+ggsave('figure_pca_experiment_3_DEGs_only.pdf', width=8, height=5, scale=0.8)
+  
+  
+
