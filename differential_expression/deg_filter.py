@@ -67,11 +67,12 @@ def read_DEGs(DEGs, experiment, concentration, time, trend):
 # 0. use-defined variables
 #
 
-DESeq2_folder = '/Users/alomana/projects/vigur/results/deseq2/unfiltered/'
-metadata_file = '/Users/alomana/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
+project_dir = '/Volumes/sandbox/projects/vigur/'
+DESeq2_folder = project_dir + 'results/deseq2/'
+metadata_file = project_dir +'data/metadata/vigur_metadata_experiment_both.tsv'
 expression_file = DESeq2_folder + 'DESeq2_TPM_values.tsv'
-filtered_folder = '/Users/alomana/projects/vigur/results/deseq2/filtered/'
-venn_folder = '/Users/alomana/projects/vigur/results/deseq2/venn/'
+filtered_folder = project_dir + 'results/deseq2_filtered/'
+venn_folder = project_dir + 'results/deseq2_venn/'
 
 experiment_tags = ['experiment_two', 'experiment_three']
 concentration_tags = ['concentration_zero', 'concentration_half', 'concentration_five', 'concentration_fifty']
@@ -230,11 +231,12 @@ for concentration in concentration_tags:
                 
                 for i in range(len(DEGs[current][concentration][time][trend])):
                     case = DEGs[current][concentration][time][trend][i]
+                    
                     if case[0] in other_cases:
                         DEGs[current][concentration][time][trend][i].append('yes')
                     else:
                         DEGs[current][concentration][time][trend][i].append('no')
-                        
+
                 # make Venn diagram
                 if current == 'experiment_two':
                     print('make Venn diagram')
@@ -251,6 +253,28 @@ for concentration in concentration_tags:
                     matplotlib.pyplot.savefig(figure_file)
                     matplotlib.pyplot.clf()
 
+# 3.2. flag DEGs of zero concentration
+for experiment in experiment_tags:
+    for time in time_tags:
+        for trend in trend_tags:
+            for concentration in concentration_tags:
+                if concentration == 'concentration_zero':
+                    time_markers = []
+                    for i in range(len(DEGs[experiment][concentration][time][trend])):
+                        time_markers.append(DEGs[experiment][concentration][time][trend][i][0])
+                        DEGs[experiment][concentration][time][trend][i].append('yes')
+                    print('time markers for {} {} {} {} | {}'.format(experiment, time, trend, concentration, len(time_markers)))
+                else:
+                    confounding_time_markers = 0
+                    for i in range(len(DEGs[experiment][concentration][time][trend])):
+                        if DEGs[experiment][concentration][time][trend][i][0] in time_markers:
+                            DEGs[experiment][concentration][time][trend][i].append('yes')
+                            confounding_time_markers = confounding_time_markers + 1
+                        else:
+                            DEGs[experiment][concentration][time][trend][i].append('no')
+                    specific_DEGs = len(DEGs[experiment][concentration][time][trend]) - confounding_time_markers
+                    print('\t {} | found confounding time markers: {}/{} out of {} DEGs, {} specific.'.format(concentration, confounding_time_markers, len(time_markers), len(DEGs[experiment][concentration][time][trend]), specific_DEGs))
+
 # 3.2. store
 for experiment in experiment_tags:
     for concentration in concentration_tags:
@@ -260,7 +284,7 @@ for experiment in experiment_tags:
                 storage = filtered_folder + '{}_{}_{}_{}_filtered.tsv'.format(experiment, concentration, time, trend)
                 with open(storage, 'w') as f:
                     f.write('{}_{}_{}_{}\n'.format(experiment, concentration, time, trend))
-                    f.write('ENSEMBL\tGene name\tBiotype\tDescription\tBase mean\tlog2FC\tP value\tAdjusted P-value\tReference expression (TPM)\tSample expression (TPM)\tDiscrete abs(log2FC)\tConsistency across experiments in this particular comparison\n')
+                    f.write('ENSEMBL\tGene name\tBiotype\tDescription\tBase mean\tlog2FC\tP value\tAdjusted P-value\tReference expression (TPM)\tSample expression (TPM)\tDiscrete abs(log2FC)\tConsistency across experiments in this particular comparison\tTime marker\n')
                     for content in DEGs[current][concentration][time][trend]:
                         line = ''
                         for element in content:

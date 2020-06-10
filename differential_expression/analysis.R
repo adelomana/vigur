@@ -26,9 +26,9 @@ tic()
 # 0. user defined variables
 register(MulticoreParam(8))
 setwd("~/scratch/")
-kallisto_dir = "/Users/alomana/projects/vigur/data/kallisto_shared_folders"
-metadata_file = '/Users/alomana/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
-results_dir = '/Users/alomana/projects/vigur/results/deseq2/'
+kallisto_dir = "/Volumes/sandbox/projects/vigur/data/kallisto_shared_folders"
+metadata_file = '/Volumes/sandbox/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
+results_dir = '/Volumes/sandbox/projects/vigur/results/deseq2/'
 
 ###
 ### 1. read data
@@ -183,8 +183,10 @@ compare = function(hypo) {
   
   print('store')
   store = paste(results_dir, tag, '_up', '.tsv', sep='')
+  print(store)
   write.table(sorted_up, file=store, quote=FALSE, sep='\t', row.names=FALSE)
   store = paste(results_dir, tag, '_down', '.tsv', sep='')
+  print(store)
   write.table(sorted_down, file=store, quote=FALSE, sep='\t', row.names=FALSE)
   
   print('---')
