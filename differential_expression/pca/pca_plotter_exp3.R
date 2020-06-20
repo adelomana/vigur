@@ -7,6 +7,8 @@
 #BiocManager::install("vsn")
 #BiocManager::install("hexbin")
 #BiocManager::install("BiocParallel")
+#BiocManager::install("svglite")
+#BiocManager::install("systemfonts")
 
 library(DESeq2)                
 library(tximport)             
@@ -19,6 +21,7 @@ library(RColorBrewer)
 library(viridis)
 library(BiocParallel)
 library(ggplot2)
+library(svglite)
 
 # 0. user defined variables
 register(MulticoreParam(8))
@@ -102,11 +105,11 @@ ggplot(pcaData, aes(PC1, PC2, color=treatment, shape=time)) +
   scale_color_manual(breaks=c("zero", "half", 'five', 'fifty'), values = c("black", "#59a14f", "#edc948", "#e15759")) + 
   scale_shape_manual(breaks=c("zero", "four", 'twentyfour'), values=c(8, 15, 17)) + 
   geom_point(size=5, alpha=2/3) + 
-  xlab(paste0("PC1: ",percentVar[1],"% variance")) + 
-  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) + 
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) + 
   theme_bw()
 
-ggsave('figure_pca_experiment_3_DEGs_only.pdf', width=8, height=5, scale=0.8)
+ggsave('figure_pca_experiment_3_DEGs_only.svg', width=8, height=5, scale=0.8)
   
   
 
