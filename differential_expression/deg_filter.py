@@ -1,14 +1,96 @@
 ###
-### This script filters DEGs following the rules: (1) absolute log2 fold-change greater than one compared to initial conditions; (2) expression greater than 3 TPM; (3) relative standard error of the mean across replicates lower than one third; and (4) P < 0.05 and P-adjusted < 0.1 as called by DESeq2 [1] version 1.26.0.
+### This script filters DEGs following the rules: (1) absolute log2 fold-change greater than one compared to initial conditions; (2) expression greater than 2 TPM; (3) relative standard error of the mean across replicates lower than 1/2; and (4) P < 0.05 and P-adjusted < 0.1 as called by DESeq2 [1] version 1.26.0.
 ###
 
-import sys, numpy
+import sys, numpy, matplotlib_venn
+
 import matplotlib, matplotlib.pyplot
-import matplotlib_venn
+matplotlib.rcParams.update({'font.size':20, 'font.family':'FreeSans', 'xtick.labelsize':20, 'ytick.labelsize':20})
+#matplotlib.rcParams['pdf.fonttype']=42
 
 ###
 ### FUNCS
 ###
+
+def extreme_responders_analysis(time, concentrations, figure_file):
+
+    # f.1. iterate over concentrations for each time point compute x and y
+    allx = []
+    ally = []
+    all_names = []
+
+    for trend in trend_tags:
+        enrichment_names = []; enrichment_IDs = []
+        for concentration in concentrations:
+            print(experiment, concentration, time, trend)
+
+            for content in DEGs[experiment][concentration][time][trend]:
+                # discrete log2FC considering sign
+                if content[5] > 0:
+                    x = content[10]
+                elif content[5] < 0:
+                    x = -content[10]
+                else:
+                    raise('DEG should not have a log2FC of zero')
+                # log10 average expression
+                y = numpy.log10(numpy.mean([content[8], content[9]]))
+                allx.append(x)
+                ally.append(y)
+                all_names.append(content[1])
+                enrichment_IDs.append(content[0])
+                enrichment_names.append(content[1])
+        enrichment_IDs = list(set(enrichment_IDs))
+        enrichment_names = list(set(enrichment_names))
+        print('\t Set of genes found: {}'.format(", ".join(enrichment_names)))
+        for element in enrichment_IDs:
+            print(element)
+
+    ## f.2. calculate ranks of extreme outliers
+    extreme_threshold = int(extreme_threshold_ratio * len(allx))
+    print('searching for {} extreme responders which corresponds to a ratio of {} out of {} signficant events'.format(extreme_threshold, extreme_threshold_ratio, len(allx)))
+
+    normalizedx = allx / numpy.max(numpy.abs(allx))
+    normalizedy = ally / numpy.max(ally)
+    objective = [numpy.sqrt(normalizedx[i]**2 + normalizedy[i]**2) for i in range(len(normalizedx))]
+    positions = numpy.flip(numpy.argsort(objective))
+    extreme_positions = positions[:extreme_threshold]
+
+    epxo = []; epyo = []; epxg = []; epyg = []
+    epo_names = []; epg_names =[]
+    for pos in extreme_positions:
+        if allx[pos] > 0:
+             epxo = [allx[pos] for pos in extreme_positions if allx[pos] > 0]
+             epyo = [ally[pos] for pos in extreme_positions if allx[pos] > 0]
+             epo_names = [all_names[pos] for pos in extreme_positions if allx[pos] > 0]
+        else:
+            epxg = [allx[pos] for pos in extreme_positions if allx[pos] < 0]
+            epyg = [ally[pos] for pos in extreme_positions if allx[pos] < 0]
+            epg_names = [all_names[pos] for pos in extreme_positions if allx[pos] < 0]
+        print(all_names[pos], allx[pos], ally[pos])
+    greyx = []; greyy = []
+    for i in range(len(allx)):
+        if i not in extreme_positions:
+            greyx.append(allx[i]); greyy.append(ally[i])
+
+    ## f.3. plot
+    matplotlib.pyplot.figure(figsize=(8, 8))
+    matplotlib.pyplot.plot(greyx, greyy, 'o', color='black', alpha=1/8, mew=0, ms=10)
+    matplotlib.pyplot.plot(epxo, epyo, 'o', color='orange', alpha=1/2, mew=0, ms=20)
+    matplotlib.pyplot.plot(epxg, epyg, 'o', color='green', alpha=1/2, mew=0, ms=20)
+
+    for i in range(len(epo_names)):
+        matplotlib.pyplot.text(epxo[i], epyo[i], epo_names[i], horizontalalignment='left', verticalalignment='center')
+    for i in range(len(epg_names)):
+        matplotlib.pyplot.text(epxg[i], epyg[i], epg_names[i], horizontalalignment='left', verticalalignment='center')
+
+    matplotlib.pyplot.xlabel('discrete log2 FC')
+    matplotlib.pyplot.ylabel('log10 average expression')
+    matplotlib.pyplot.tight_layout()
+    #matplotlib.pyplot.savefig(figure_file)
+    matplotlib.pyplot.savefig(figure_file, dpi=300)
+    matplotlib.pyplot.clf()
+
+    return None
 
 def metadata_reader():
 
@@ -26,22 +108,22 @@ def metadata_reader():
                 replicate = v[4].replace('\n', '')
 
                 metadata[sample] = ('experiment_'+experiment, 'concentration_'+treatment, 'time_'+time, 'replicate_'+replicate)
-    
+
     return metadata
 
-def read_DEGs(DEGs, experiment, concentration, time, trend): 
+def read_DEGs(DEGs, experiment, concentration, time, trend):
 
     '''
     Returns a dictionary of DEGs.
     '''
 
     working_file = DESeq2_folder + experiment + '_' + concentration + '_' + time + '_vs_zero' + '_' + trend + '.tsv'
-    
+
     with open(working_file, 'r') as f:
         next(f)
         for line in f:
             v = line.split('\t')
-            
+
             ensembl = v[0]
             gene_name = v[1]
             biotype = v[2]
@@ -54,7 +136,7 @@ def read_DEGs(DEGs, experiment, concentration, time, trend):
             info = (ensembl, gene_name, biotype, description, basemean, logFC, pvalue, adjusted)
 
             DEGs[experiment][concentration][time][trend].append(info)
-                    
+
     print('{} {} {} {} \t DEGs: {}'.format(experiment, concentration, time, trend, len(DEGs[experiment][concentration][time][trend])))
 
     return DEGs
@@ -67,7 +149,7 @@ def read_DEGs(DEGs, experiment, concentration, time, trend):
 # 0. use-defined variables
 #
 
-project_dir = '/Volumes/sandbox/projects/vigur/'
+project_dir = '/home/adrian/projects/vigur/'
 DESeq2_folder = project_dir + 'results/deseq2/'
 metadata_file = project_dir +'data/metadata/vigur_metadata_experiment_both.tsv'
 expression_file = DESeq2_folder + 'DESeq2_TPM_values.tsv'
@@ -105,19 +187,19 @@ for experiment in experiment_tags:
 print('define metadata')
 metadata = metadata_reader()
 sample_IDs = list(metadata.keys())
-                
+
 # 1.2. define expression
 print('define expression')
 
 expression = {}
 for sample in sample_IDs:
     expression[sample] = {}
-    
+
 with open(expression_file, 'r') as f:
     next(f)
     for line in f:
         v = line.split('\t')
-        
+
         gene_name = v[0]
         v = [float(element) for element in v[1:]]
 
@@ -138,7 +220,7 @@ print('filter DEGs')
 for experiment in DEGs:
     for concentration in DEGs[experiment]:
         for time in DEGs[experiment][concentration]:
-            for trend in DEGs[experiment][concentration][time]:                
+            for trend in DEGs[experiment][concentration][time]:
 
                 # define sample and reference sample labels
                 sample_labels = []; reference_labels = []
@@ -165,7 +247,7 @@ for experiment in DEGs:
 
                     # filter 2: identify fold-changes using discrete values
                     ###
-                    ###            [round(x, epsilon)/epsilon ] + 1 
+                    ###            [round(x, epsilon)/epsilon ] + 1
                     ###  FC = abs  -------------------------------- > 1
                     ###            [round(y, epsilon)/epsilon ] + 1
                     ###
@@ -184,23 +266,23 @@ for experiment in DEGs:
                     sem_sam = numpy.std(sam_int) / numpy.sqrt(len(sam_int))
                     rsem_sam = sem_sam / numpy.mean(sam_int)
                     noise = numpy.max([rsem_ref, rsem_sam])
-                    
+
                     # selection
                     if abs_log2FC < discrete_fc_threshold:
                         including = False
                         info = '\t WARNING: small change gene discarded. Expression changes from {:.3f} ({}) to {:.3f} ({}), resulting in abs_log2FC {:.3f}. {}, {}'.format(r, den, s, num, abs_log2FC, case[1], case[3])
                         print(info)
-                        
+
                     if (including == True) and (top < expression_threshold):
                         including = False
                         info = '\t WARNING: low-expression gene discarded. Expression changes from {:.3f} to {:.3f}. {}, {}'.format(r, s, case[1], case[3])
                         print(info)
-                        
+
                     if (including == True) and (noise > noise_threshold):
                         including = False
                         info = '\t WARNING: noisy gene. Ref: {}, RSEM {:.3f}; Sam: {}, RSEM {:.3f}. {}, {}'.format(ref, rsem_ref, sam, rsem_sam, case[1], case[3])
                         print(info)
-                        
+
                     if including == True:
                         content = list(case)
                         content.append(r); content.append(s); content.append(abs_log2FC)
@@ -216,7 +298,7 @@ for experiment in DEGs:
 #
 # 3. write results
 #
-        
+
 # 3.1. identify consistent results
 for concentration in concentration_tags:
     for time in time_tags:
@@ -228,10 +310,10 @@ for concentration in concentration_tags:
                 # add consistency
                 current_cases = list(set([element[0] for element in DEGs[current][concentration][time][trend]]))
                 other_cases = list(set([element[0] for element in DEGs[other][concentration][time][trend]]))
-                
+
                 for i in range(len(DEGs[current][concentration][time][trend])):
                     case = DEGs[current][concentration][time][trend][i]
-                    
+
                     if case[0] in other_cases:
                         DEGs[current][concentration][time][trend][i].append('yes')
                     else:
@@ -299,15 +381,65 @@ for experiment in experiment_tags:
                             line=line+sub+'\t'
                         line=line+'\n'
                         f.write(line)
-                        
+
                         if content[0] not in union:
                             union.append(content[0])
-                            
+
     # store union of DEGs
     union_storage = filtered_folder + 'union_{}.tsv'.format(experiment)
     print('DEG union for experiment {}: {}'.format(experiment, len(union)))
     with open(union_storage, 'w') as g:
         for element in union:
             g.write('{}\n'.format(element))
-            
-        
+
+# 4. make a figure with extreme responders
+# extreme responders should be the 5% of log2 FC plus average expression.
+# highlight the top lower ranks, summing both ranks of average expression and log2 FC.
+
+extreme_threshold_ratio = 0.05
+experiment = 'experiment_three'
+
+#########################################
+
+time = 'time_four'
+concentrations = ['concentration_zero']
+figure_file = filtered_folder + 'figures/extreme_responders_time_four_without_adrenaline.png'
+extreme_responders_analysis(time, concentrations, figure_file)
+
+time = 'time_twentyfour'
+concentrations = ['concentration_zero']
+figure_file = filtered_folder + 'figures/extreme_responders_time_twentyfour_without_adrenaline.png'
+extreme_responders_analysis(time, concentrations, figure_file)
+
+# ADRENALINE HALF ##########################################
+time = 'time_four'
+concentrations = ['concentration_half']
+figure_file = filtered_folder + 'figures/extreme_responders_time_four_concentration_half.png'
+extreme_responders_analysis(time, concentrations, figure_file)
+
+time = 'time_twentyfour'
+concentrations = ['concentration_half']
+figure_file = filtered_folder + 'figures/extreme_responders_time_twentyfour_concentration_half.png'
+extreme_responders_analysis(time, concentrations, figure_file)
+
+# ADRENALINE FIVE ##########################################
+time = 'time_four'
+concentrations = ['concentration_five']
+figure_file = filtered_folder + 'figures/extreme_responders_time_four_concentration_five.png'
+extreme_responders_analysis(time, concentrations, figure_file)
+
+time = 'time_twentyfour'
+concentrations = ['concentration_five']
+figure_file = filtered_folder + 'figures/extreme_responders_time_twentyfour_concentration_five.png'
+extreme_responders_analysis(time, concentrations, figure_file)
+
+# ADRENALINE FIFTY ##########################################
+time = 'time_four'
+concentrations = ['concentration_fifty']
+figure_file = filtered_folder + 'figures/extreme_responders_time_four_concentration_fifty.png'
+extreme_responders_analysis(time, concentrations, figure_file)
+
+time = 'time_twentyfour'
+concentrations = ['concentration_fifty']
+figure_file = filtered_folder + 'figures/extreme_responders_time_twentyfour_concentration_fifty.png'
+extreme_responders_analysis(time, concentrations, figure_file)

@@ -1,15 +1,18 @@
-#if (!requireNamespace("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
 
-#BiocManager::install("DESeq2")
-#BiocManager::install("tximport")
-#BiocManager::install("EnsDb.Hsapiens.v86")
-#BiocManager::install("BiocParallel")
-#BiocManager::install("rlist")
-#BiocManager::install("stringr")
-#BiocManager::install("org.Hs.eg.db")
-#BiocManager::install("tictoc")
-#BiocManager::install("rhdf5")
+BiocManager::install("XML")
+BiocManager::install("openssl")
+BiocManager::install("GenomicFeatures")
+BiocManager::install("DESeq2")
+BiocManager::install("tximport")
+BiocManager::install("EnsDb.Hsapiens.v86")
+BiocManager::install("BiocParallel")
+BiocManager::install("rlist")
+BiocManager::install("stringr")
+BiocManager::install("org.Hs.eg.db")
+BiocManager::install("tictoc")
+BiocManager::install("rhdf5")
 
 library(DESeq2)                
 library(tximport)         
@@ -26,9 +29,9 @@ tic()
 # 0. user defined variables
 register(MulticoreParam(8))
 setwd("~/scratch/")
-kallisto_dir = "/Volumes/sandbox/projects/vigur/data/kallisto_shared_folders"
-metadata_file = '/Volumes/sandbox/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
-results_dir = '/Volumes/sandbox/projects/vigur/results/deseq2/'
+kallisto_dir = "/home/adrian/projects/vigur/data/kallisto_shared_folders"
+metadata_file = '/home/adrian/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
+results_dir = '/home/adrian/projects/vigur/results/deseq2/'
 
 ###
 ### 1. read data

@@ -1,14 +1,12 @@
-#if (!requireNamespace("BiocManager", quietly = TRUE))
-#  install.packages("BiocManager")
-#BiocManager::install("DESeq2")
-#BiocManager::install("tximport")
-#BiocManager::install("EnsDb.Hsapiens.v86")
-#BiocManager::install("apeglm")
-#BiocManager::install("vsn")
-#BiocManager::install("hexbin")
-#BiocManager::install("BiocParallel")
-#BiocManager::install("svglite")
-#BiocManager::install("systemfonts")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("apeglm")
+BiocManager::install("vsn")
+BiocManager::install("hexbin")
+BiocManager::install("pheatmap")
+BiocManager::install("viridis")
+BiocManager::install("systemfonts") # required for svglite
+BiocManager::install("svglite")
 
 library(DESeq2)                
 library(tximport)             
@@ -26,9 +24,9 @@ library(svglite)
 # 0. user defined variables
 register(MulticoreParam(8))
 setwd("~/scratch/")
-kallisto_dir = "/Volumes/sandbox/projects/vigur/data/kallisto_shared_folders"
-metadata_file = '/Volumes/sandbox/projects/vigur/data/metadata/vigur_metadata_experiment3.tsv'
-DEG_file = '/Volumes/sandbox/projects/vigur/results/deseq2_filtered/union_experiment_three.tsv'
+kallisto_dir = "/home/adrian/projects/vigur/data/kallisto_shared_folders"
+metadata_file = '/home/adrian/projects/vigur/data/metadata/vigur_metadata_experiment3.tsv'
+DEG_file = '/home/adrian/projects/vigur/results/deseq2_filtered/union_experiment_three.tsv'
 
 ###
 ### 1. read data
