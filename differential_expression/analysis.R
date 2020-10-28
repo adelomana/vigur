@@ -1,18 +1,18 @@
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("XML")
-BiocManager::install("openssl")
-BiocManager::install("GenomicFeatures")
-BiocManager::install("DESeq2")
-BiocManager::install("tximport")
-BiocManager::install("EnsDb.Hsapiens.v86")
-BiocManager::install("BiocParallel")
-BiocManager::install("rlist")
-BiocManager::install("stringr")
-BiocManager::install("org.Hs.eg.db")
-BiocManager::install("tictoc")
-BiocManager::install("rhdf5")
+# if (!requireNamespace("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# 
+# BiocManager::install("XML")
+# BiocManager::install("openssl")
+# BiocManager::install("GenomicFeatures")
+# BiocManager::install("DESeq2")
+# BiocManager::install("tximport")
+# BiocManager::install("EnsDb.Hsapiens.v86")
+# BiocManager::install("BiocParallel")
+# BiocManager::install("rlist")
+# BiocManager::install("stringr")
+# BiocManager::install("org.Hs.eg.db")
+# BiocManager::install("tictoc")
+# BiocManager::install("rhdf5")
 
 library(DESeq2)                
 library(tximport)         
@@ -30,7 +30,7 @@ tic()
 register(MulticoreParam(8))
 setwd("~/scratch/")
 kallisto_dir = "/home/adrian/projects/vigur/data/kallisto_shared_folders"
-metadata_file = '/home/adrian/projects/vigur/data/metadata/vigur_metadata_experiment_both.tsv'
+metadata_file = '/home/adrian/projects/vigur/data/metadata/vigur_metadata_experiment3.tsv'
 results_dir = '/home/adrian/projects/vigur/results/deseq2/'
 
 ###
@@ -58,58 +58,37 @@ write.table(tpm, file=store, quote=FALSE, sep='\t', col.names=NA)
 # 3. arrange metadata for hypothesis testing
 hypos = list()
 
-### experiment 2
-reference_samples = c(1:3)
-
-# concentration zero
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_zero_time_four_vs_zero', 'testing'=c(4:6))
-hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_zero_time_twentyfour_vs_zero', 'testing'=c(16:18))
-hypos = list.append(hypos, hypo)
-
-# concentration half
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_half_time_four_vs_zero', 'testing'=c(7:9))
-hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_half_time_twentyfour_vs_zero', 'testing'=c(19:21))
-hypos = list.append(hypos, hypo)
-
-# concentration five
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_five_time_four_vs_zero', 'testing'=c(10:12))
-hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_five_time_twentyfour_vs_zero', 'testing'=c(22:24))
-hypos = list.append(hypos, hypo)
-
-# concentration fifty
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_fifty_time_four_vs_zero', 'testing'=c(13:15))
-hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_two_concentration_fifty_time_twentyfour_vs_zero', 'testing'=c(25:27))
-hypos = list.append(hypos, hypo)
-
 ### experiment 3
-reference_samples = c(28:30)
 
 # concentration zero
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_zero_time_four_vs_zero', 'testing'=c(31:33))
+reference_samples = c(1:3) # time zero, concentration zero
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_zero_time_four_vs_control', 'testing'=c(4:6), 'influence'='time')
 hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_zero_time_twentyfour_vs_zero', 'testing'=c(41:43))
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_zero_time_twentyfour_vs_control', 'testing'=c(14:16), 'influence'='time')
 hypos = list.append(hypos, hypo)
 
 # concentration half
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_half_time_four_vs_zero', 'testing'=c(34:35))
+reference_samples = c(4:6) # time four, concentration zero
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_half_time_four_vs_control', 'testing'=c(7:8), 'influence'='concentration')
 hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_half_time_twentyfour_vs_zero', 'testing'=c(44:46))
+reference_samples = c(14:16) # time twentyfour, concentration zero
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_half_time_twentyfour_vs_control', 'testing'=c(17:19), 'influence'='concentration')
 hypos = list.append(hypos, hypo)
 
 # concentration five
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_five_time_four_vs_zero', 'testing'=c(36:38))
+reference_samples = c(4:6) # time four, concentration zero
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_five_time_four_vs_control', 'testing'=c(9:11), 'influence'='concentration')
 hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_five_time_twentyfour_vs_zero', 'testing'=c(47:49))
+reference_samples = c(14:16) # time twentyfour, concentration zero
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_five_time_twentyfour_vs_control', 'testing'=c(20:22), 'influence'='concentration')
 hypos = list.append(hypos, hypo)
 
 # concentration fifty
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_fifty_time_four_vs_zero', 'testing'=c(39:40))
+reference_samples = c(4:6) # time four, concentration zero
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_fifty_time_four_vs_control', 'testing'=c(12:13), 'influence'='concentration')
 hypos = list.append(hypos, hypo)
-hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_fifty_time_twentyfour_vs_zero', 'testing'=c(50:52))
+reference_samples = c(14:16) # time twentyfour, concentration zero
+hypo = list('reference'=reference_samples, 'tag'='experiment_three_concentration_fifty_time_twentyfour_vs_control', 'testing'=c(23:25), 'influence'='concentration')
 hypos = list.append(hypos, hypo)
 
 # 4. define analysis function
@@ -119,8 +98,11 @@ compare = function(hypo) {
   reference = hypo$reference
   testing = hypo$testing
   
+  print('---------- working on a new hypothesis')
   print(tag)
+  print('reference')
   print(reference)
+  print('testing samples')
   print(testing)
   
   ### f.1. define hypothesis metadata
@@ -136,8 +118,16 @@ compare = function(hypo) {
   txi = tximport(files, type="kallisto", tx2gene=tx2gene, ignoreAfterBar=TRUE, ignoreTxVersion=TRUE)
   
   ### f.3. import into DESeq object
-  dds = DESeqDataSetFromTximport(txi, colData=hypothesis_metadata, design=~time)
-  dds$time <- relevel(dds$time, ref = "zero")
+  if (hypo$influence == 'time'){
+    print('working with time as influence...')
+    dds = DESeqDataSetFromTximport(txi, colData=hypothesis_metadata, design=~time)
+    dds$time <- relevel(dds$time, ref="zero")
+  }
+  if (hypo$influence == 'concentration'){
+    print('working with concentration as influence...')
+    dds = DESeqDataSetFromTximport(txi, colData=hypothesis_metadata, design=~treatment)
+    dds$treatment <- relevel(dds$treatment, ref="zero")
+  }
   
   ### f.4. filtering
   threshold = 10
@@ -155,7 +145,7 @@ compare = function(hypo) {
   filt1 = res[which(res$pvalue < 0.05), ]
   filt2 = filt1[which(filt1$padj < 0.1), ]
   print(paste('DEGs found', dim(filt2)[1], sep=' '))
-  #write.table(filt2, file='testing.tsv', quote=FALSE, sep='\t')
+  write.table(filt2, file=paste(results_dir, 'unformatted/unformatted_results.', tag, '.tsv', sep=''), quote=FALSE, sep='\t')
   
   print('annotate')
   df = as.data.frame(filt2)
@@ -170,7 +160,6 @@ compare = function(hypo) {
     print('Warning: no description found for ENSEMBL IDs')
     descriptions = data.frame('ENSEMBL'=selected, 'GENENAME'=rep('Not found',each=length(selected)))
   })
-  #print(descriptions)
   
   names(descriptions)[names(descriptions) == "GENENAME"] <- "DESCRIPTION" # arrow is needed here!
   descriptions['common'] = descriptions$ENSEMBL
@@ -192,7 +181,6 @@ compare = function(hypo) {
   print(store)
   write.table(sorted_down, file=store, quote=FALSE, sep='\t', row.names=FALSE)
   
-  print('---')
 }
 
 # 5. iterate function
