@@ -30,7 +30,7 @@ data_dir = '/home/adrian/projects/vigur/data/metabolomics/pools/'
 results_dir = '/home/adrian/projects/vigur/results/metabolomics/pools/'
 
 # variables
-iters = 2
+iters = 1
 nThreads = 8
 
 ### 1. read info
@@ -67,7 +67,7 @@ for (case_index in 1:length(cases)) {
       
     # write results
     results_file = paste(label, iter, '.tsv', sep='')
-    df = as.data.frame(resultParameters$best_settings$parameters[1:4])
+    df = as.data.frame(resultParameters$best_settings$parameters)
     write.table(df, file=results_file, sep='\t', quote=FALSE)
   }
 }
