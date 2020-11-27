@@ -29,9 +29,9 @@ tic()
 # 0. user defined variables
 register(MulticoreParam(8))
 setwd("~/scratch/")
-kallisto_dir = "/home/adrian/projects/vigur/data/kallisto_shared_folders"
-metadata_file = '/home/adrian/projects/vigur/data/metadata/vigur_metadata_experiment3.tsv'
-results_dir = '/home/adrian/projects/vigur/results/deseq2/'
+kallisto_dir = "/home/adrian/projects/vigur/data/transcriptomics/kallisto_shared_folders"
+metadata_file = '/home/adrian/projects/vigur/data/transcriptomics/metadata/vigur_metadata_experiment3.tsv'
+results_dir = '/home/adrian/projects/vigur/results/transcriptomics/deseq2/'
 
 ###
 ### 1. read data
@@ -52,8 +52,16 @@ txi = tximport(files, type="kallisto", tx2gene=tx2gene, ignoreAfterBar=TRUE, ign
 
 tpm = txi$abundance
 colnames(tpm) = metadata$sample
+dim(tpm)
+
+ensembl_ids = rownames(tpm)
+annotation = select(EnsDb.Hsapiens.v86, ensembl_ids, c("GENEBIOTYPE", "GENENAME"), "GENEID")
+
 store = paste(results_dir, 'DESeq2_TPM_values.tsv', sep='')
 write.table(tpm, file=store, quote=FALSE, sep='\t', col.names=NA)
+
+store = paste(results_dir, 'annotation.tsv', sep='')
+write.table(annotation, file=store, quote=FALSE, sep='\t', col.names=NA)
 
 # 3. arrange metadata for hypothesis testing
 hypos = list()
@@ -158,7 +166,7 @@ compare = function(hypo) {
     descriptions = select(org.Hs.eg.db, keys=selected, columns=c("GENENAME"), keytype="ENSEMBL")
   }, error = function(e) {
     print('Warning: no description found for ENSEMBL IDs')
-    descriptions = data.frame('ENSEMBL'=selected, 'GENENAME'=rep('Not found',each=length(selected)))
+    descriptions = data.frame('ENSEMBL'=selected, 'GENENAME'=rep('Not found', each=length(selected)))
   })
   
   names(descriptions)[names(descriptions) == "GENENAME"] <- "DESCRIPTION" # arrow is needed here!

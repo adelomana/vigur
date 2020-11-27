@@ -6,7 +6,6 @@ import sys, numpy
 
 import matplotlib, matplotlib.pyplot
 matplotlib.rcParams.update({'font.size':20, 'font.family':'FreeSans', 'xtick.labelsize':20, 'ytick.labelsize':20})
-#matplotlib.rcParams['pdf.fonttype']=42
 
 ###
 ### FUNCS
