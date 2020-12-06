@@ -7,8 +7,10 @@
 # define an R value as threshold
 
 import pandas, sys, os, numpy
-
 import scipy, scipy.stats
+
+import pyensembl
+annotation = pyensembl.EnsemblRelease(100)
 
 import matplotlib, matplotlib.pyplot
 matplotlib.rcParams.update({'font.size':20, 'font.family':'FreeSans', 'xtick.labelsize':20, 'ytick.labelsize':20})
@@ -20,6 +22,7 @@ matplotlib.rcParams.update({'font.size':20, 'font.family':'FreeSans', 'xtick.lab
 tpm_file = '/home/adrian/projects/vigur/results/transcriptomics/deseq2/DESeq2_TPM_values.tsv'
 metadata_file = '/home/adrian/projects/vigur/data/transcriptomics/metadata/vigur_metadata_experiment3.tsv'
 DEGs_dir = '/home/adrian/projects/vigur/results/transcriptomics/deseq2_filtered/'
+results_dir = '/home/adrian/projects/vigur/results/transcriptomics/dose/'
 
 concentration_tags = ['zero', 'half', 'five', 'fifty']
 time_tags = ['four', 'twentyfour']
@@ -83,8 +86,9 @@ for time in time_tags:
         trimmed = reduced.loc[working_genes]
         print(trimmed.shape)
 
+
         ### 2.4. correlation analysis of expression
-        association = pandas.DataFrame(index=working_genes, columns=['time', 'corr', 'delta'])
+        association = pandas.DataFrame(index=working_genes, columns=['corr', 'delta'])
         for ensembl in working_genes:
 
             x = []; y = []
@@ -115,30 +119,79 @@ for time in time_tags:
             association.at[ensembl, 'corr'] = r_value
             association.at[ensembl, 'delta'] = delta
 
-        # plot association results
-        strong = association[(numpy.abs(association['corr'] >= 0.8)) & (association['delta'] >= numpy.log10(2*2))]
-        fair = association[(numpy.abs(association['corr'] >= 0.8)) & (association['delta'] >= numpy.log10(2)) & (association['delta'] < numpy.log10(2*2))]
-        weak = association[(numpy.abs(association['corr'] < 0.8)) & (association['delta'] < numpy.log10(2*2))]
+            # generate plot
+            matplotlib.pyplot.plot(x, y, 'o', color='black', alpha=1/3, mew=0)
+            matplotlib.pyplot.plot(x, ypred, '-', color='red', lw=2, alpha=2/3)
+            title_tag = 'r = {:.2f}; P = {:.2e}'.format(r_value, p_value)
+            matplotlib.pyplot.title(title_tag)
+            matplotlib.pyplot.xticks([0, 1, 2, 3], ['0', '0.5', '5', '50'])
+            matplotlib.pyplot.xlabel('Adrenaline')
+            matplotlib.pyplot.ylabel('log10 TPM')
+            figure_file = '{}time_{}_trend_{}_{}.png'.format(results_dir, time, trend, ensembl)
+            matplotlib.pyplot.tight_layout()
+            matplotlib.pyplot.savefig(figure_file)
+            matplotlib.pyplot.close()
 
-        print(fair.head)
 
+
+        ### 2.5. slice dataframe into groups
+        strong = association[(numpy.abs(association['corr'].abs() > 0.8)) & (association['delta'] >= numpy.log10(2*2))]
+        fair = association[(numpy.abs(association['corr'].abs() >= 0.8)) & (association['delta'] >= numpy.log10(2)) & (association['delta'] < numpy.log10(2*2))]
+        weak = association[(numpy.abs(association['corr'].abs() < 0.8)) & (association['delta'] < numpy.log10(2*2))]
+
+        ### 2.6. print dataframes for figure annotations
+        gene_names = []
+        for ensembl in strong.index:
+            name = annotation.gene_name_of_gene_id(ensembl)
+            gene_names.append(name)
+            print(ensembl, name)
+        print(gene_names)
+        strong.insert(0, 'geneID', gene_names)
+
+        gene_names = []
+        for ensembl in fair.index:
+            name = annotation.gene_name_of_gene_id(ensembl)
+            gene_names.append(name)
+        fair.insert(0, 'geneID', gene_names)
+
+        print('strong')
+        print(strong)
+        print()
+        print('fair')
+        print(fair)
+        print()
+
+        ### 2.7. plot association results
         matplotlib.pyplot.plot(strong['corr'], strong['delta'], 'o', color='orange', alpha=2/3, mew=0, ms=8)
         matplotlib.pyplot.plot(fair['corr'], fair['delta'], 'o', color='green', alpha=1/2, mew=0, ms=6)
         matplotlib.pyplot.plot(weak['corr'], weak['delta'], 'o', color='black', alpha=1/3, mew=0, ms=4)
 
+        for i in range(len(strong.index)):
+            matplotlib.pyplot.text(strong['corr'][i], strong['delta'][i], strong['geneID'][i], fontsize=4)
+        for i in range(len(fair.index)):
+            matplotlib.pyplot.text(fair['corr'][i], fair['delta'][i], fair['geneID'][i], fontsize=4)
+
         if trend == 'up':
-            matplotlib.pyplot.xlim([0.5, 1])
+            matplotlib.pyplot.xlim([0.6, 1])
         if trend == 'down':
-            matplotlib.pyplot.xlim([-1, -0.5])
+            matplotlib.pyplot.xlim([-1, -0.6])
         matplotlib.pyplot.ylim([0, 1.7])
         matplotlib.pyplot.xlabel('r value')
         matplotlib.pyplot.ylabel('delta')
         matplotlib.pyplot.grid(alpha=0.5)
         matplotlib.pyplot.tight_layout()
-        matplotlib.pyplot.savefig('association{}{}.pdf'.format(time, trend))
+        matplotlib.pyplot.savefig('{}association{}{}.svg'.format(results_dir, time, trend))
         matplotlib.pyplot.close()
 
 
+
+
+
+        ### 2.7. generate plots for strong and fair dataframes
+        #for geneID in strong.index:
+
+
+        #
             # #generate plot
             # matplotlib.pyplot.plot(x, y, 'o', color='black', alpha=1/3, mew=0)
             # matplotlib.pyplot.plot(x, ypred, '-', color='red', lw=2, alpha=2/3)

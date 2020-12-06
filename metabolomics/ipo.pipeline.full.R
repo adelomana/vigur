@@ -7,10 +7,17 @@
 # if (!requireNamespace("BiocManager", quietly = TRUE))
 #   install.packages("BiocManager")
 # 
-# # IPO dependencies
+# # IPO dependencies. They may vary depending on your machine
 # BiocManager::install("foreign")
 # BiocManager::install("spatial")
 # BiocManager::install("igraph")
+# 
+# BiocManager::install('XML')
+# BiocManager::install('mzID') 
+# BiocManager::install('MSnbase')
+# BiocManager::install('mzR')
+# BiocManager::install('SummarizedExperiment')
+# 
 # BiocManager::install("CAMERA")
 # BiocManager::install("IPO")
 
@@ -31,10 +38,11 @@ results_dir = '/home/adrian/projects/vigur/results/metabolomics/pools/'
 
 # variables
 iters = 1
-nThreads = 8
+nThreads = 20
 
 ### 1. read info
 cases = list.files(data_dir)
+cases = c("negative", "positive")
 
 ###
 ### 2. analysis
