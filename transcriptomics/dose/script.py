@@ -19,6 +19,7 @@ matplotlib.rcParams.update({'font.size':20, 'font.family':'FreeSans', 'xtick.lab
 ### 0. user-defined variables
 ###
 
+candidates_file = '/home/adrian/projects/vigur/data/transcriptomics/metabolic_candidates/Interesting redox and heparan sulphate proteins.csv'
 tpm_file = '/home/adrian/projects/vigur/results/transcriptomics/deseq2/DESeq2_TPM_values.tsv'
 metadata_file = '/home/adrian/projects/vigur/data/transcriptomics/metadata/vigur_metadata_experiment3.tsv'
 DEGs_dir = '/home/adrian/projects/vigur/results/transcriptomics/deseq2_filtered/'
@@ -35,8 +36,6 @@ replicate_tags = ['A', 'B', 'C']
 
 ### 1.1. create a datafrme of expression
 expression = pandas.read_csv(tpm_file, sep='\t', index_col=0)
-#print(expression.head)
-#sys.exit()
 
 # convert expression dataframe columns into biological meaningful tags
 metadata = pandas.read_csv(metadata_file, sep='\t')
@@ -45,6 +44,14 @@ for row in metadata.itertuples():
     new = 'time_{}_treatment_{}_replicate_{}'.format(row.time, row.treatment, row.replicate)
     new_names = {old:new}
     expression.rename(columns=new_names, inplace=True)
+
+# read metabolic candidates
+met_candidates = []
+with open(candidates_file, 'r') as f:
+    next(f)
+    for line in f:
+        v = line.split(',')
+        met_candidates.append(v[1])
 
 ###
 ### 2. analysis
@@ -127,12 +134,10 @@ for time in time_tags:
             matplotlib.pyplot.xticks([0, 1, 2, 3], ['0', '0.5', '5', '50'])
             matplotlib.pyplot.xlabel('Adrenaline')
             matplotlib.pyplot.ylabel('log10 TPM')
-            figure_file = '{}time_{}_trend_{}_{}.png'.format(results_dir, time, trend, ensembl)
+            figure_file = '{}time_{}_trend_{}_{}.pdf'.format(results_dir, time, trend, ensembl)
             matplotlib.pyplot.tight_layout()
             matplotlib.pyplot.savefig(figure_file)
             matplotlib.pyplot.close()
-
-
 
         ### 2.5. slice dataframe into groups
         strong = association[(numpy.abs(association['corr'].abs() > 0.8)) & (association['delta'] >= numpy.log10(2*2))]
@@ -159,6 +164,8 @@ for time in time_tags:
         print()
         print('fair')
         print(fair)
+        print('weak')
+        print(weak)
         print()
 
         ### 2.7. plot association results
@@ -183,32 +190,13 @@ for time in time_tags:
         matplotlib.pyplot.savefig('{}association{}{}.svg'.format(results_dir, time, trend))
         matplotlib.pyplot.close()
 
-
-
-
-
-        ### 2.7. generate plots for strong and fair dataframes
-        #for geneID in strong.index:
-
-
-        #
-            # #generate plot
-            # matplotlib.pyplot.plot(x, y, 'o', color='black', alpha=1/3, mew=0)
-            # matplotlib.pyplot.plot(x, ypred, '-', color='red', lw=2, alpha=2/3)
-            #
-            # tag = '{}_{}_{}'.format(ensembl, time, trend)
-            # if numpy.abs(r_value) > 0.8 and p_value < 0.05:
-            #     print('\t', ensembl, r_value, p_value)
-            #     figure_selection_dir = 'strong/'
-            # else:
-            #     print('\t***', ensembl, r_value, p_value)
-            #     figure_selection_dir = 'weak/'
-            #
-            # title_tag = 'r = {:.2f}; P = {:.2e}'.format(r_value, p_value)
-            # matplotlib.pyplot.title(title_tag)
-            # matplotlib.pyplot.xlabel('Adrenaline')
-            # matplotlib.pyplot.ylabel('log10 TPM')
-            # figure_file = '{}time_{}_trend_{}_{}.pdf'.format(figure_selection_dir, time, trend, ensembl)
-            # matplotlib.pyplot.tight_layout()
-            # matplotlib.pyplot.savefig(figure_file)
-            # matplotlib.pyplot.close()
+        # overlap with metabolic model selected candidates (provided by Sarah)
+        print('checking overlap...')
+        print('candidates: {}; strong: {}'.format(len(met_candidates), len(strong)))
+        print('candidates: {}; weak: {}'.format(len(met_candidates), len(weak)))
+        a = list(set(list(strong.index)) & set(met_candidates))
+        b = list(set(list(fair.index)) & set(met_candidates))
+        c = list(set(list(weak.index)) & set(met_candidates))
+        print('intersect', len(a), len(b), len(c))
+        print(a, b, c)
+        print()

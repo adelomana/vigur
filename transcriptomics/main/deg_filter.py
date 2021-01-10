@@ -68,11 +68,11 @@ def read_DEGs(DEGs, experiment, concentration, time, trend):
 #
 
 project_dir = '/home/adrian/projects/vigur/'
-DESeq2_folder = project_dir + 'results/deseq2/'
-metadata_file = project_dir +'data/metadata/vigur_metadata_experiment3.tsv'
+DESeq2_folder = project_dir + 'results/transcriptomics/deseq2/'
+metadata_file = project_dir +'data/transcriptomics/metadata/vigur_metadata_experiment3.tsv'
 expression_file = DESeq2_folder + 'DESeq2_TPM_values.tsv'
-filtered_folder = project_dir + 'results/deseq2_filtered/'
-venn_folder = project_dir + 'results/deseq2_venn/'
+filtered_folder = project_dir + 'results/transcriptomics/deseq2_filtered/'
+venn_folder = project_dir + 'results/transcriptomics/deseq2_venn/'
 
 experiment_tags = ['experiment_three']
 concentration_tags = ['concentration_zero', 'concentration_half', 'concentration_five', 'concentration_fifty']
@@ -316,8 +316,8 @@ for experiment in experiment_tags:
                             if metadata[sample][0:3] == (experiment, 'concentration_zero', time):
                                 reference_labels.append(sample)
 
-                    print('INFO: experiment {}, concentration {}, time {}, trend {}'.format(experiment, concentration, time, trend))
-                    print('INFO: sample labels {}, reference labels {}\n'.format(sample_labels, reference_labels))
+                    #print('INFO: experiment {}, concentration {}, time {}, trend {}'.format(experiment, concentration, time, trend))
+                    #print('INFO: sample labels {}, reference labels {}\n'.format(sample_labels, reference_labels))
 
                     # gather TPM expression
                     ref = [expression[label][ensemblID] for label in reference_labels]
