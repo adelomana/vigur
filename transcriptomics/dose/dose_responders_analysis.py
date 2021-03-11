@@ -24,6 +24,7 @@ tpm_file = '/home/adrian/projects/vigur/results/transcriptomics/deseq2/DESeq2_TP
 metadata_file = '/home/adrian/projects/vigur/data/transcriptomics/metadata/vigur_metadata_experiment3.tsv'
 DEGs_dir = '/home/adrian/projects/vigur/results/transcriptomics/deseq2_filtered/'
 results_dir = '/home/adrian/projects/vigur/results/transcriptomics/dose/'
+metabolic_candidates_file = '/home/adrian/projects/vigur/results/integration/gProfiler_hsapiens_2-12-2021_11-19-41 AM.csv'
 
 concentration_tags = ['zero', 'half', 'five', 'fifty']
 time_tags = ['four', 'twentyfour']
@@ -45,13 +46,21 @@ for row in metadata.itertuples():
     new_names = {old:new}
     expression.rename(columns=new_names, inplace=True)
 
-# read metabolic candidates
+
+
+### 1.2. read metabolic candidates
 met_candidates = []
-with open(candidates_file, 'r') as f:
+with open(metabolic_candidates_file, 'r') as f:
     next(f)
     for line in f:
         v = line.split(',')
-        met_candidates.append(v[1])
+        field = v[1]
+        value = field.replace('"', '')
+        met_candidates.append(value)
+met_candidates = list(set(met_candidates))
+met_candidates.remove('nan')
+met_candidates.sort()
+print('{} metabolic candidates converted.'.format(len(met_candidates)))
 
 ###
 ### 2. analysis
@@ -190,13 +199,21 @@ for time in time_tags:
         matplotlib.pyplot.savefig('{}association{}{}.svg'.format(results_dir, time, trend))
         matplotlib.pyplot.close()
 
-        # overlap with metabolic model selected candidates (provided by Sarah)
-        print('checking overlap...')
-        print('candidates: {}; strong: {}'.format(len(met_candidates), len(strong)))
-        print('candidates: {}; weak: {}'.format(len(met_candidates), len(weak)))
-        a = list(set(list(strong.index)) & set(met_candidates))
-        b = list(set(list(fair.index)) & set(met_candidates))
-        c = list(set(list(weak.index)) & set(met_candidates))
-        print('intersect', len(a), len(b), len(c))
-        print(a, b, c)
-        print()
+
+        # 2.8. overlap with metabolic model selected candidates (provided by Sarah)
+        if time == 'four':
+            print('checking metabolic overlap for time {} and trend {}...'.format(time, trend))
+            print('candidates: {}; strong: {}'.format(len(met_candidates), len(strong)))
+            print('candidates: {}; weak: {}'.format(len(met_candidates), len(weak)))
+            a = list(set(list(strong.index)) & set(met_candidates))
+            b = list(set(list(fair.index)) & set(met_candidates))
+            c = list(set(list(weak.index)) & set(met_candidates))
+            print('intersect', len(a), len(b), len(c))
+            print(a, b, c)
+            for element in a:
+                name = annotation.gene_name_of_gene_id(element)
+                print('strong\t{}\t{}'.format(element, name))
+            for element in b:
+                name = annotation.gene_name_of_gene_id(element)
+                print('fair\t{}\t{}'.format(element, name))
+            print()

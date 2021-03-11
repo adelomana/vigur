@@ -42,14 +42,17 @@ data_dir = '/home/adrian/projects/vigur/data/metabolomics/pools/'
 results_dir = '/home/adrian/projects/vigur/results/metabolomics/pools/'
 
 # variables
-nThreads = 10
+nThreads = 10 # only six pools available, so only six threads may be used
 
 ### 1. read info
 cases = list.files(data_dir)
+#cases = cases[1:2]
 
 ###
 ### 2. analysis
 ###
+full_set_parameters = data.frame()
+
 for (case_index in 1:length(cases)) {
   label = cases[case_index]
   results_subdir = paste(results_dir, label, sep='')
@@ -76,5 +79,11 @@ for (case_index in 1:length(cases)) {
   # write results
   results_file = paste(label, '.tsv', sep='')
   df = as.data.frame(resultParameters$best_settings$parameters)
+  row.names(df) = c(label)
   write.table(df, file=results_file, sep='\t', quote=FALSE)
+  
+  full_set_parameters = rbind(full_set_parameters, df)
 }
+
+setwd(results_dir)
+save(full_set_parameters, file = "ipo_output.RData")
