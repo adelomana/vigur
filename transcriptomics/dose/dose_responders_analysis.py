@@ -46,8 +46,6 @@ for row in metadata.itertuples():
     new_names = {old:new}
     expression.rename(columns=new_names, inplace=True)
 
-
-
 ### 1.2. read metabolic candidates
 met_candidates = []
 with open(metabolic_candidates_file, 'r') as f:
@@ -61,10 +59,13 @@ met_candidates = list(set(met_candidates))
 met_candidates.remove('nan')
 met_candidates.sort()
 print('{} metabolic candidates converted.'.format(len(met_candidates)))
+print()
 
 ###
 ### 2. analysis
 ###
+
+four_hour_candidates = []
 
 for time in time_tags:
 
@@ -85,7 +86,7 @@ for time in time_tags:
                         gene = v[0]
                         if gene not in working_genes:
                             working_genes.append(gene)
-                print(concentration, len(working_genes))
+                print('cat. {}: working with {} genes'.format(concentration, len(working_genes)))
         print()
 
         ### 2.2. iterate over the genes to see if there is enough correlation signal
@@ -98,10 +99,8 @@ for time in time_tags:
 
         ### 2.3. slice dataframe by genes and cases
         reduced = expression[cases]
-        print(reduced.shape)
         trimmed = reduced.loc[working_genes]
-        print(trimmed.shape)
-
+        print(trimmed.head())
 
         ### 2.4. correlation analysis of expression
         association = pandas.DataFrame(index=working_genes, columns=['corr', 'delta'])
@@ -150,30 +149,50 @@ for time in time_tags:
 
         ### 2.5. slice dataframe into groups
         strong = association[(numpy.abs(association['corr'].abs() > 0.8)) & (association['delta'] >= numpy.log10(2*2))]
-        fair = association[(numpy.abs(association['corr'].abs() >= 0.8)) & (association['delta'] >= numpy.log10(2)) & (association['delta'] < numpy.log10(2*2))]
-        weak = association[(numpy.abs(association['corr'].abs() < 0.8)) & (association['delta'] < numpy.log10(2*2))]
+        #fair = association[(numpy.abs(association['corr'].abs() >= 0.8)) & (association['delta'] >= numpy.log10(2)) & (association['delta'] < numpy.log10(2*2))]
+        #weak = association[(numpy.abs(association['corr'].abs() < 0.8)) & (association['delta'] < numpy.log10(2*2))]
+        fair = association[(numpy.abs(association['corr'].abs() > 0.6)) & (association['delta'] >= numpy.log10(2))]
+        weak = association[(numpy.abs(association['corr'].abs() > 0.4)) & (association['delta'] >= numpy.log10(1.5))]
+
+        print('original slices shapes for strong, fair and weak are: {} {} {}'.format(strong.shape, fair.shape, weak.shape))
+        weak.drop(fair.index, inplace=True)
+        fair.drop(strong.index, inplace=True)
+        print('after subsetting, shapes are: {} {} {}'.format(strong.shape, fair.shape, weak.shape))
 
         ### 2.6. print dataframes for figure annotations
+        print('about to get gene names for strong set...')
         gene_names = []
         for ensembl in strong.index:
             name = annotation.gene_name_of_gene_id(ensembl)
             gene_names.append(name)
-            print(ensembl, name)
-        print(gene_names)
         strong.insert(0, 'geneID', gene_names)
 
+        print('about to get gene names for fair...')
         gene_names = []
         for ensembl in fair.index:
-            name = annotation.gene_name_of_gene_id(ensembl)
+            try:
+                name = annotation.gene_name_of_gene_id(ensembl)
+            except:
+                name = ensembl
             gene_names.append(name)
         fair.insert(0, 'geneID', gene_names)
 
-        print('strong')
+        print('about to get gene names for weak...')
+        gene_names = []
+        for ensembl in weak.index:
+            try:
+                name = annotation.gene_name_of_gene_id(ensembl)
+            except:
+                name = ensembl
+            gene_names.append(name)
+        weak.insert(0, 'geneID', gene_names)
+
+        print('Found {} genes strongly associated to cat.'.format(strong.shape[0]))
         print(strong)
         print()
-        print('fair')
+        print('Found {} genes fairly associated to cat.'.format(fair.shape[0]))
         print(fair)
-        print('weak')
+        print('Found {} genes weakly associated to cat.'.format(weak.shape[0]))
         print(weak)
         print()
 
@@ -199,21 +218,38 @@ for time in time_tags:
         matplotlib.pyplot.savefig('{}association{}{}.svg'.format(results_dir, time, trend))
         matplotlib.pyplot.close()
 
+        ### 2.8. overlap with metabolic model selected candidates (provided by Sarah)
+        print('checking metabolic overlap for time {} and trend {}...'.format(time, trend))
+        print('candidates: {}; strong: {}'.format(len(met_candidates), len(strong)))
+        print('candidates: {}; weak: {}'.format(len(met_candidates), len(weak)))
+        a = list(set(list(strong.index)) & set(met_candidates))
+        b = list(set(list(fair.index)) & set(met_candidates))
+        c = list(set(list(weak.index)) & set(met_candidates))
+        print('intersect', len(a), len(b), len(c))
+        print(a, b, c)
+        for element in a:
+            name = annotation.gene_name_of_gene_id(element)
+            print('strong\t{}\t{}'.format(element, name))
+        for element in b:
+            name = annotation.gene_name_of_gene_id(element)
+            print('fair\t{}\t{}'.format(element, name))
+        print()
 
-        # 2.8. overlap with metabolic model selected candidates (provided by Sarah)
+        ### 2.9. save genes from 4 h that are weak, fair or strong
         if time == 'four':
-            print('checking metabolic overlap for time {} and trend {}...'.format(time, trend))
-            print('candidates: {}; strong: {}'.format(len(met_candidates), len(strong)))
-            print('candidates: {}; weak: {}'.format(len(met_candidates), len(weak)))
-            a = list(set(list(strong.index)) & set(met_candidates))
-            b = list(set(list(fair.index)) & set(met_candidates))
-            c = list(set(list(weak.index)) & set(met_candidates))
-            print('intersect', len(a), len(b), len(c))
-            print(a, b, c)
-            for element in a:
-                name = annotation.gene_name_of_gene_id(element)
-                print('strong\t{}\t{}'.format(element, name))
-            for element in b:
-                name = annotation.gene_name_of_gene_id(element)
-                print('fair\t{}\t{}'.format(element, name))
-            print()
+            strong_candidates = strong.index.to_list()
+            fair_candidates = fair.index.to_list()
+            weak_candidates = weak.index.to_list()
+            print('candidates for further analysis: {} {} {}'.format(len(strong_candidates), len(fair_candidates), len(weak_candidates)))
+            all = strong_candidates + fair_candidates + weak_candidates
+            print('all: {}'.format(len(all)))
+            for element in all:
+                if element not in four_hour_candidates:
+                    four_hour_candidates.append(element)
+
+### 2.9.bis. write candidates for GRNi
+print(four_hour_candidates, len(four_hour_candidates))
+grni_targets_file = results_dir + 'grni_target_genes.txt'
+with open(grni_targets_file, 'w') as f:
+    for element in four_hour_candidates:
+        f.write('{}\n'.format(element))

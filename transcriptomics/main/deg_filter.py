@@ -193,6 +193,11 @@ for experiment in DEGs:
                     rsem_sam = sem_sam / numpy.mean(sam_int)
                     noise = numpy.max([rsem_ref, rsem_sam])
 
+                    # filter 4: relevant expression change difference---at least 2 TPM or > 5% of change
+                    expression_difference = numpy.abs(s - r)
+                    five_per_cent_change = numpy.median([r, s]) * 0.05
+                    relevance_threshold = numpy.max([five_per_cent_change, 2])
+
                     # selection
                     if abs_log2FC < discrete_fc_threshold:
                         including = False
@@ -208,6 +213,11 @@ for experiment in DEGs:
                         including = False
                         info = '\t WARNING: noisy gene. Ref: {}, RSEM {:.3f}; Sam: {}, RSEM {:.3f}. {}, {}'.format(ref, rsem_ref, sam, rsem_sam, case[1], case[3])
                         print(info)
+
+                    #if (including == True) and (expression_difference < relevance_threshold):
+                    #    including = False
+                    #    info = '\t WARNING: non-relevant expression difference for {}. Expression difference: {:.2f}. Reference {:.3f} and sample {:.3f}.'.format(case[1], expression_difference, r, s)
+                    #    print(info)
 
                     if including == True:
                         content = list(case)
@@ -276,7 +286,7 @@ for experiment in experiment_tags:
                             union.append(content[0])
 
     # 3.2.1. store union of DEGs for heatmap using external tools, like R
-    union_storage = filtered_folder + 'strict_union_TPM.tsv'
+    union_storage = filtered_folder + 'strict_union_log2TPMplusOne.tsv'
     print('DEG union for experiment {}: {}'.format(experiment, len(union)))
     experiment = 'experiment_three'
 
@@ -341,7 +351,8 @@ for experiment in experiment_tags:
 
                 # compute value
                 s = numpy.median(sam)
-                value = int(numpy.around(s))
+                value = numpy.round(numpy.log2(s+1), 3)
+                #value = int(numpy.around(s))
 
                 # write value
                 g.write('\t{}'.format(value))
@@ -359,10 +370,21 @@ for experiment in experiment_tags:
 
         for concentration in concentration_tags[1:]:
             for time in time_tags:
-                word = '[Cat.] = {} | Time = {} h'.format(concentration, time)
+
+                if concentration == 'concentration_half':
+                    formata = '0.5'
+                elif concentration  == 'concentration_five':
+                    formata = '5'
+                elif concentration == 'concentration_fifty':
+                    formata = '50'
+
+                if time == 'time_four':
+                    formatb = '4'
+                elif time == 'time_twentyfour':
+                    formatb = '24'
+                word = '[Cat.] = {} | Time = {} h'.format(formata, formatb)
                 g.write('\t{}'.format(word))
         g.write('\n')
-
 
         for ensemblID in union:
 
