@@ -20,7 +20,6 @@ library(biomaRt)
 ###
 results_dir = '/home/adrian/projects/vigur/results/sequencing/tpm/'
 kallisto_dir = "/home/adrian/projects/vigur/results/sequencing/kallisto/kallisto.100"
-annotation_file = "/home/adrian/software/kallisto/ensembl_v96/transcripts_to_genes.txt"
 
 ###
 ### 2. annotation
