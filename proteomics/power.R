@@ -82,6 +82,35 @@ pwr.t2n.test(n1=4, n2=2, sig.level=0.05, power=0.80, d=NULL) # d = 3.257188
 
 
 
-
+#
+# working with making sure that fc are effect size do not have linear correspondance
+#
 #poooled sd https://resources.wolframcloud.com/FormulaRepository/resources/Pooled-Standard-Deviation
+library(effectsize)
+
+x = c(9, 6, 12)
+y = c(18, 12, 24)
+z = c(x, y)
+sd(x)
+sd(y)
+sd(x)/mean(x)
+sd(y)/mean(y)
+pooled_sd = 
+es = (mean(y) - mean(x)) / sd_pooled(x, y)
+es
+
+cohens_d(data1, data2)
+
+#define two samples
+data1 <- c(6, 6, 7, 8, 8, 10, 11, 13, 15, 15, 16, 17, 19, 19, 21)
+data2 <- c(10, 11, 13, 13, 15, 17, 17, 19, 20, 22, 24, 25, 27, 29, 29)
+
+cohens_d(data1, data2)
+
+a = (length(data1)-1) * var(data1)
+b = (length(data2)-1) * var(data2)
+num = a + b
+denom = length(data1) + length(data2) - 2
+pooled = sqrt(num / denom)
+(mean(data2) - mean(data1)) / pooled
 
