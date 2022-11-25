@@ -1,4 +1,5 @@
 library(pwr)
+library(effectsize)
 
 #
 # checking a couple of examples from the paper
@@ -19,7 +20,7 @@ result$h
 # reproduce figure
 #
 # apparently h = effect size = (foldchange - 1) / CV
-cv = 0.6
+cv = 0.4
 replicates = c() 
 powersA = c()
 powersB = c()
@@ -54,52 +55,21 @@ lines(replicates, powersB, type='b', pch=19, col='red')
 lines(replicates, powersC, type='b', pch=19, col='blue')
 lines(replicates, powersD, type='b', pch=19, col='green')
 
-replicates
-powersA
-powersB
-
-cv = 1.2
-sigma = sqrt(log(cv**2 + 1))
-sigma
-
-a = 1; b=1.2
-effect = abs(log(a) - log(b))
-effect
-
 #
 # computation of appropriate d
 #
 
 # n1 = 2 and n2 = 4 for four hours
-pwr.t2n.test(n1=2, n2=4, sig.level=0.05, power=0.80, d=NULL)
-# d = 3.257188
+pwr.t2n.test(n1=2, n2=4, sig.level=0.05, power=0.80, d=NULL) # d = 3.257188
 
 # n1 = 4 and n2 = 4, 3, 2 for twenty-four hours
 pwr.t2n.test(n1=4, n2=4, sig.level=0.05, power=0.80, d=NULL) # d = 2.380757
 pwr.t2n.test(n1=4, n2=3, sig.level=0.05, power=0.80, d=NULL) # d = 2.683785
 pwr.t2n.test(n1=4, n2=2, sig.level=0.05, power=0.80, d=NULL) # d = 3.257188
 
-
-
-
 #
-# working with making sure that fc are effect size do not have linear correspondance
+# how to calculate effect size: Cohen's d
 #
-#poooled sd https://resources.wolframcloud.com/FormulaRepository/resources/Pooled-Standard-Deviation
-library(effectsize)
-
-x = c(9, 6, 12)
-y = c(18, 12, 24)
-z = c(x, y)
-sd(x)
-sd(y)
-sd(x)/mean(x)
-sd(y)/mean(y)
-pooled_sd = 
-es = (mean(y) - mean(x)) / sd_pooled(x, y)
-es
-
-cohens_d(data1, data2)
 
 #define two samples
 data1 <- c(6, 6, 7, 8, 8, 10, 11, 13, 15, 15, 16, 17, 19, 19, 21)
