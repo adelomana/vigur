@@ -82,5 +82,7 @@ b = (length(data2)-1) * var(data2)
 num = a + b
 denom = length(data1) + length(data2) - 2
 pooled = sqrt(num / denom)
-(mean(data2) - mean(data1)) / pooled
+d = (mean(data2) - mean(data1)) / pooled
 
+print(c(a, b))
+print(d)
