@@ -30,6 +30,8 @@ kallisto_dir = "/home/adrian/projects/vigur/results/sequencing/kallisto/kallisto
 metadata_file = '/home/adrian/projects/vigur/data/sequencing/metadata/metadata.tsv'
 results_dir = '/home/adrian/projects/vigur/results/sequencing/DEGs/'
 
+sink('messages.2023.03.09.txt')
+
 ###
 ### 3. read gene annotation
 ###

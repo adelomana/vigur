@@ -73,7 +73,7 @@ filtered_folder = '/home/adrian/projects/vigur/results/sequencing/DEGs_filtered/
 DESeq2_folder = '/home/adrian/projects/vigur/results/sequencing/DEGs/'
 
 experiment_tags = ['run_72', 'run_73']
-concentration_tags = ['treatment_mix']
+concentration_tags = ['treatment_mix', 'treatment_five_epi', 'treatment_five_nor', 'treatment_ilo_only', 'treatment_mix_plus_ilo']
 time_tags = ['time_four', 'time_twentyfour']
 trend_tags = ['up', 'down']
 
@@ -100,7 +100,7 @@ for experiment in experiment_tags:
                 try:
                     DEGs = read_DEGs(DEGs, experiment, concentration, time, trend)
                 except:
-                    print('no info found for {} {} {} {}'.format(experiment, concentration, time, trend))
+                    pass
 sys.exit()
 
 # 1.2. define metadata
