@@ -51,3 +51,4 @@ sequencing/receptors/.ipynb_checkpoints/
 transcriptomics/receptors/.ipynb_checkpoints/
 
 lipidomics/EC072/progenesis/.ipynb_checkpoints/
+*.csv
