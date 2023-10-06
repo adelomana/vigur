@@ -52,3 +52,9 @@ transcriptomics/receptors/.ipynb_checkpoints/
 
 lipidomics/EC072/progenesis/.ipynb_checkpoints/
 *.csv
+.DS_Store
+.virtual_documents/metabolomics/targeted/targeted_metabolomics_analysis.ipynb
+.virtual_documents/metabolomics/targeted/Untitled.ipynb
+*.svg
+metabolomics/targeted/.ipynb_checkpoints/targeted_metabolomics_analysis-checkpoint.ipynb
+metabolomics/targeted/.virtual_documents/targeted_metabolomics_analysis.ipynb
