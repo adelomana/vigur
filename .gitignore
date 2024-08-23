@@ -78,3 +78,6 @@ metabolomics/targeted/.virtual_documents/positive.general.is.controlled.ipynb
 /metabolomics/targeted.072.eva/.virtual_documents
 metabolomics/targeted.072.eva/old/.ipynb_checkpoints/basic.analysis-checkpoint.ipynb
 *.txt
+/phenotype/seahorse/.ipynb_checkpoints
+/phenotype/seahorse/.virtual_documents
+/phenotype/teer/.ipynb_checkpoints
