@@ -5,7 +5,6 @@
 #BiocManager::install("org.Hs.eg.db")
 #BiocManager::install("ReactomePA")
 #BiocManager::install("tictoc")
-#BiocManager::install("wesanderson")
 
 #
 # 0. load libraries
@@ -20,20 +19,40 @@ library(ggplot2)
 #
 # 2. read files and generate lists of genes
 #
-filename = 'deps.04.tsv'
+filename = 'deps.04.blue.tsv'
 df = read.table(filename, sep='\t', header=TRUE)
 ensemblIDs = df$ENSEMBL
-deps04 = bitr(ensemblIDs, fromType = 'ENSEMBL', toType = 'ENTREZID', OrgDb='org.Hs.eg.db')
-dim(deps04)
+deps04blue = bitr(ensemblIDs, fromType = 'ENSEMBL', toType = 'ENTREZID', OrgDb='org.Hs.eg.db')
+dim(deps04blue)
 
-filename = 'deps.24.tsv'
+filename = 'deps.04.red.tsv'
 df = read.table(filename, sep='\t', header=TRUE)
 ensemblIDs = df$ENSEMBL
-deps24 = bitr(ensemblIDs, fromType = 'ENSEMBL', toType = 'ENTREZID', OrgDb='org.Hs.eg.db')
-dim(deps24)
+deps04red = bitr(ensemblIDs, fromType = 'ENSEMBL', toType = 'ENTREZID', OrgDb='org.Hs.eg.db')
+dim(deps04red)
 
-geneLists = list('DEPs t = 4 h'=deps04$ENTREZID, 
-                'DEPs t = 24 h'=deps24$ENTREZID)
+filename = 'deps.24.blue.tsv'
+df = read.table(filename, sep='\t', header=TRUE)
+ensemblIDs = df$ENSEMBL
+deps24blue = bitr(ensemblIDs, fromType = 'ENSEMBL', toType = 'ENTREZID', OrgDb='org.Hs.eg.db')
+dim(deps24blue)
+
+filename = 'deps.24.red.tsv'
+df = read.table(filename, sep='\t', header=TRUE)
+ensemblIDs = df$ENSEMBL
+deps24red = bitr(ensemblIDs, fromType = 'ENSEMBL', toType = 'ENTREZID', OrgDb='org.Hs.eg.db')
+dim(deps24red)
+
+geneLists = list('DEPs t = 4 h down'=deps04blue$ENTREZID, 
+                 'DEPs t = 4 h up'=deps04red$ENTREZID, 
+                 'DEPs t = 24 h down'=deps24blue$ENTREZID, 
+                 'DEPs t = 24 h up'=deps24red$ENTREZID 
+                )
+
+geneLists = list(
+                 'DEPs t = 24 h down'=deps24blue$ENTREZID, 
+                 'DEPs t = 24 h up'=deps24red$ENTREZID 
+)
 
 #
 # 3. run the analysis on different Ontologies
@@ -46,7 +65,7 @@ ck = compareCluster(geneLists,
                     pvalueCutoff=significance_threshold)
 toc()
 
-p1 = dotplot(ck, size='count', showCategory=15, font.size=8) 
+p1 = dotplot(ck, size='count', showCategory=20, font.size=6) 
 print(p1)
 
 # and I have a preference for cividis, but this is just personal preference
